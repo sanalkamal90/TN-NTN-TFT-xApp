@@ -1,0 +1,146 @@
+{
+  "xapp_name": "tn-ntn-tft-xapp",
+  "version": "1.0.0",
+  "containers": [
+    {
+      "name": "tn-ntn-tft-xapp",
+      "image": {
+        "registry": "nexus3.o-ran-sc.org:10002",
+        "name": "tn-ntn-tft-xapp",
+        "tag": "1.0.0"
+      }
+    }
+  ],
+  "messaging": {
+    "ports": [
+      {
+        "name": "rmr-data",
+        "container": "tn-ntn-tft-xapp",
+        "port": 4560,
+        "rxMessages": [
+          "RIC_INDICATION",
+          "A1_POLICY_REQ"
+        ],
+        "txMessages": [
+          "RIC_CONTROL_REQ",
+          "A1_POLICY_RESP",
+          "A1_POLICY_QUERY"
+        ],
+        "policies": [],
+        "description": "RMR data port for E2 indications and A1 policies"
+      },
+      {
+        "name": "rmr-route",
+        "container": "tn-ntn-tft-xapp",
+        "port": 4561,
+        "description": "RMR route table distribution port"
+      }
+    ]
+  },
+  "rmr": {
+    "protPort": "tcp:4560",
+    "maxSize": 4096,
+    "numWorkers": 1,
+    "txMessages": [
+      {"name": "RIC_CONTROL_REQ", "id": 12040},
+      {"name": "A1_POLICY_RESP", "id": 20011},
+      {"name": "A1_POLICY_QUERY", "id": 20012},
+      {"name": "RIC_SUB_REQ", "id": 12010},
+      {"name": "RIC_SUB_DEL_REQ", "id": 12020},
+      {"name": "RIC_HEALTH_CHECK_RESP", "id": 101}
+    ],
+    "rxMessages": [
+      {"name": "RIC_INDICATION", "id": 12050},
+      {"name": "A1_POLICY_REQ", "id": 20010},
+      {"name": "RIC_SUB_RESP", "id": 12011},
+      {"name": "RIC_SUB_FAILURE", "id": 12012},
+      {"name": "RIC_SUB_DEL_RESP", "id": 12021},
+      {"name": "RIC_HEALTH_CHECK_REQ", "id": 100}
+    ]
+  },
+  "controls": {
+    "forecast_window_steps": {
+      "type": "integer",
+      "default": 12,
+      "description": "TFT prediction horizon (number of future steps). Fixed at 12 to match trained model."
+    },
+    "rsrp_alert_threshold_dbm": {
+      "type": "number",
+      "default": -110.0,
+      "description": "RSRP threshold (dBm) below which proactive handover alert is generated."
+    },
+    "elevation_alert_threshold": {
+      "type": "number",
+      "default": 0.15,
+      "description": "Normalized elevation threshold (0-1) below which proactive handover alert is generated. 0.15 ~ 13.5 degrees."
+    },
+    "tft_every_n": {
+      "type": "integer",
+      "default": 5,
+      "description": "Run TFT inference every N E2 indications per UE. Higher values reduce compute load."
+    },
+    "min_window_depth": {
+      "type": "integer",
+      "default": 30,
+      "description": "Minimum sliding window depth (rows) before first TFT inference. Range: 10-60."
+    }
+  },
+  "metrics": [
+    {
+      "name": "indication_count",
+      "type": "counter",
+      "description": "Total E2 indications (RIC_INDICATION messages) processed"
+    },
+    {
+      "name": "control_count",
+      "type": "counter",
+      "description": "Total E2 proactive control requests (RIC_CONTROL_REQ) sent"
+    },
+    {
+      "name": "alert_count",
+      "type": "counter",
+      "description": "Total proactive handover alerts generated"
+    },
+    {
+      "name": "tft_prediction_count",
+      "type": "counter",
+      "description": "Total TFT 12-step forecasts completed"
+    },
+    {
+      "name": "tft_latency_ms",
+      "type": "histogram",
+      "description": "TFT inference latency in milliseconds (target: 100-300ms)"
+    },
+    {
+      "name": "a1_policy_count",
+      "type": "counter",
+      "description": "Total A1 policy updates received and applied"
+    }
+  ],
+  "serviceModels": [
+    {
+      "name": "E2SM-KPM",
+      "version": "3.0",
+      "description": "E2 Service Model for Key Performance Measurement (broadband NTN metrics at high frequency)"
+    },
+    {
+      "name": "E2SM-RC",
+      "version": "1.0",
+      "description": "E2 Service Model for RAN Control (proactive handover actions)"
+    }
+  ],
+  "probes": {
+    "readiness": {
+      "httpGet": {
+        "path": "/xapp/v1/status",
+        "port": 8447
+      }
+    },
+    "liveness": {
+      "httpGet": {
+        "path": "/health",
+        "port": 8447
+      }
+    }
+  }
+}

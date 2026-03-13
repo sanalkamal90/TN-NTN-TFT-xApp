@@ -1,0 +1,122 @@
+-- ==========================================================================
+-- 3GPP TS 38.331 RRC MeasurementReport (Minimal Subset)
+--
+-- This is a simplified ASN.1 schema covering only the types needed
+-- to decode UE MeasurementReport messages for the IoT-NTN Tracker.
+-- Full schema: 3GPP TS 38.331 v17.8.0 (2024-03)
+-- ==========================================================================
+
+NR-RRC-Definitions DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- TS 38.331 Section 6.2.2 — UL-DCCH-Message
+UL-DCCH-Message ::= SEQUENCE {
+    message     UL-DCCH-MessageType
+}
+
+UL-DCCH-MessageType ::= CHOICE {
+    c1          CHOICE {
+        measurementReport       MeasurementReport,
+        ...
+    },
+    messageClassExtension       NULL
+}
+
+-- TS 38.331 Section 6.3.2 — MeasurementReport
+MeasurementReport ::= SEQUENCE {
+    criticalExtensions  CHOICE {
+        measurementReport       MeasurementReport-IEs,
+        criticalExtensionsFuture    NULL
+    }
+}
+
+MeasurementReport-IEs ::= SEQUENCE {
+    measResults     MeasResults,
+    ...
+}
+
+-- TS 38.331 Section 6.3.2 — MeasResults
+MeasResults ::= SEQUENCE {
+    measId          MeasId,
+    measResultServingMOList     MeasResultServMOList,
+    measResultNeighCells    CHOICE {
+        measResultListNR    MeasResultListNR,
+        ...
+    }   OPTIONAL,
+    ...
+}
+
+MeasId ::= INTEGER (1..64)
+
+-- Serving cell measurement results
+MeasResultServMOList ::= SEQUENCE (SIZE (1..32)) OF MeasResultServMO
+
+MeasResultServMO ::= SEQUENCE {
+    servCellIndex       ServCellIndex,
+    measResultServingCell   MeasResultNR,
+    measResultBestNeighCell MeasResultNR    OPTIONAL,
+    ...
+}
+
+ServCellIndex ::= INTEGER (0..31)
+
+-- NR measurement result
+MeasResultNR ::= SEQUENCE {
+    physCellId      PhysCellId  OPTIONAL,
+    measResult      SEQUENCE {
+        cellResults     SEQUENCE {
+            resultsSSB-Cell     MeasQuantityResults  OPTIONAL,
+            resultsCSI-RS-Cell  MeasQuantityResults  OPTIONAL
+        },
+        rsIndexResults  SEQUENCE {
+            resultsSSB      ResultsPerSSB-IndexList     OPTIONAL,
+            resultsCSI-RS   ResultsPerCSI-RS-IndexList  OPTIONAL
+        }   OPTIONAL
+    },
+    ...
+}
+
+PhysCellId ::= INTEGER (0..1007)
+
+-- Measurement quantity results (RSRP, RSRQ, SINR)
+MeasQuantityResults ::= SEQUENCE {
+    rsrp        RSRP-Range      OPTIONAL,
+    rsrq        RSRQ-Range      OPTIONAL,
+    sinr        SINR-Range      OPTIONAL
+}
+
+-- TS 38.133 Table 10.1.6.1-1: SS-RSRP mapping
+-- Index 0..127 maps to -156..-29 dBm (index - 156)
+RSRP-Range ::= INTEGER (0..127)
+
+-- TS 38.133 Table 10.1.11.1-1: SS-RSRQ mapping
+-- Index 0..127 maps to -43..-20.5 dB in 0.5 dB steps
+RSRQ-Range ::= INTEGER (0..127)
+
+-- TS 38.133 Table 10.1.16.1-1: SS-SINR mapping
+-- Index 0..127 maps to -23..40 dB in 0.5 dB steps
+SINR-Range ::= INTEGER (0..127)
+
+-- Per-SSB index results
+ResultsPerSSB-IndexList ::= SEQUENCE (SIZE (1..64)) OF ResultsPerSSB-Index
+
+ResultsPerSSB-Index ::= SEQUENCE {
+    ssb-Index       SSB-Index,
+    ssb-Results     MeasQuantityResults     OPTIONAL
+}
+
+SSB-Index ::= INTEGER (0..63)
+
+-- Per-CSI-RS index results
+ResultsPerCSI-RS-IndexList ::= SEQUENCE (SIZE (1..64)) OF ResultsPerCSI-RS-Index
+
+ResultsPerCSI-RS-Index ::= SEQUENCE {
+    csi-RS-Index        CSI-RS-Index,
+    csi-RS-Results      MeasQuantityResults     OPTIONAL
+}
+
+CSI-RS-Index ::= INTEGER (0..95)
+
+-- Neighbour cell measurement results
+MeasResultListNR ::= SEQUENCE (SIZE (1..8)) OF MeasResultNR
+
+END

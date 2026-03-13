@@ -1,0 +1,166 @@
+-- ============================================================
+-- E2SM-RC v1.0 — RAN Control Service Model
+-- Subset for IoT-NTN Tracker xApp (APER encoding)
+--
+-- Reference: O-RAN.WG3.E2SM-RC-v01.03
+-- Only types needed for encoding RIC_CONTROL_REQ payloads
+-- for handover recommendations (Style Type 3, Action ID 1).
+-- ============================================================
+
+E2SM-RC-IEs {
+    iso(1) identified-organization(3) dod(6) internet(1)
+    private(4) enterprise(1) oran(53148) e2(1)
+    version1(1) e2sm(2) e2sm-rc-ies(3)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+-- ============================================================
+-- Control Header
+-- ============================================================
+
+E2SM-RC-ControlHeader ::= CHOICE {
+    controlHeader-Format1       E2SM-RC-ControlHeader-Format1,
+    controlHeader-Format2       E2SM-RC-ControlHeader-Format2,
+    ...
+}
+
+E2SM-RC-ControlHeader-Format1 ::= SEQUENCE {
+    ric-Style-Type              RIC-Style-Type,
+    ric-ControlAction-ID        RIC-ControlAction-ID,
+    ueID                        UEID-RC                     OPTIONAL,
+    ...
+}
+
+E2SM-RC-ControlHeader-Format2 ::= SEQUENCE {
+    ueID                        UEID-RC                     OPTIONAL,
+    ric-ControlDecision         ENUMERATED {
+        accept,
+        reject,
+        ...
+    }                                                       OPTIONAL,
+    ...
+}
+
+-- ============================================================
+-- Control Message
+-- ============================================================
+
+E2SM-RC-ControlMessage ::= CHOICE {
+    controlMessage-Format1      E2SM-RC-ControlMessage-Format1,
+    ...
+}
+
+E2SM-RC-ControlMessage-Format1 ::= SEQUENCE {
+    ranP-List                   SEQUENCE (SIZE(0..65535)) OF E2SM-RC-ControlMessage-Format1-Item,
+    ...
+}
+
+E2SM-RC-ControlMessage-Format1-Item ::= SEQUENCE {
+    ranParameter-ID             RANParameter-ID,
+    ranParameter-valueType      RANParameter-ValueType,
+    ...
+}
+
+-- ============================================================
+-- Control Outcome
+-- ============================================================
+
+E2SM-RC-ControlOutcome ::= CHOICE {
+    controlOutcome-Format1      E2SM-RC-ControlOutcome-Format1,
+    ...
+}
+
+E2SM-RC-ControlOutcome-Format1 ::= SEQUENCE {
+    ranP-List                   SEQUENCE (SIZE(0..65535)) OF E2SM-RC-ControlOutcome-Format1-Item,
+    ...
+}
+
+E2SM-RC-ControlOutcome-Format1-Item ::= SEQUENCE {
+    ranParameter-ID             RANParameter-ID,
+    ranParameter-valueType      RANParameter-ValueType,
+    ...
+}
+
+-- ============================================================
+-- RAN Parameter Types
+-- ============================================================
+
+RANParameter-ID ::= INTEGER (1..4294967295)
+
+RANParameter-ValueType ::= CHOICE {
+    ranP-Choice-ElementTrue     RANParameter-ValueType-Choice-ElementTrue,
+    ranP-Choice-ElementFalse    RANParameter-ValueType-Choice-ElementFalse,
+    ranP-Choice-Structure       RANParameter-ValueType-Choice-Structure,
+    ranP-Choice-List            RANParameter-ValueType-Choice-List,
+    ...
+}
+
+RANParameter-ValueType-Choice-ElementTrue ::= SEQUENCE {
+    ranParameter-value          RANParameter-Value          OPTIONAL,
+    ...
+}
+
+RANParameter-ValueType-Choice-ElementFalse ::= SEQUENCE {
+    ranParameter-value          RANParameter-Value          OPTIONAL,
+    ...
+}
+
+RANParameter-ValueType-Choice-Structure ::= SEQUENCE {
+    ranParameter-Structure      SEQUENCE (SIZE(1..65535)) OF RANParameter-STRUCTURE-Item,
+    ...
+}
+
+RANParameter-STRUCTURE-Item ::= SEQUENCE {
+    ranParameter-ID             RANParameter-ID,
+    ranParameter-valueType      RANParameter-ValueType,
+    ...
+}
+
+RANParameter-ValueType-Choice-List ::= SEQUENCE {
+    ranParameter-List           SEQUENCE (SIZE(1..65535)) OF RANParameter-STRUCTURE-Item,
+    ...
+}
+
+RANParameter-Value ::= CHOICE {
+    valueBoolean                BOOLEAN,
+    valueInt                    INTEGER,
+    valueReal                   REAL,
+    valueBitS                   BIT STRING,
+    valueOctS                   OCTET STRING,
+    valuePrtS                   PrintableString,
+    ...
+}
+
+-- ============================================================
+-- Common Types
+-- ============================================================
+
+RIC-Style-Type ::= INTEGER (0..255)
+RIC-ControlAction-ID ::= INTEGER (1..255)
+
+UEID-RC ::= CHOICE {
+    gNB-UEID                    UEID-RC-GNB,
+    ...
+}
+
+UEID-RC-GNB ::= SEQUENCE {
+    amf-UE-NGAP-ID              INTEGER (0..1099511627775),
+    ...
+}
+
+-- ============================================================
+-- Well-Known RIC Style Types and Action IDs for Handover
+--
+-- Style Type 3: Connected Mode Mobility Control
+-- Action ID 1:  Handover Control
+--
+-- RAN Parameter IDs for Handover:
+--   1: Target Primary Cell ID (OCTET STRING — NR Cell ID)
+--   2: Target Cell RSRP (INTEGER — 3GPP RSRP index 0..127)
+--   3: Handover Cause (INTEGER)
+-- ============================================================
+
+END

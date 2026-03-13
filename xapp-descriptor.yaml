@@ -1,0 +1,115 @@
+# O-RAN WG6 xApp Descriptor for TN-NTN TFT Proactive Handover xApp
+# Conformant with O-RAN.WG6.O2-GA&P-R003-v06.00
+
+xapp:
+  name: tn-ntn-tft-xapp
+  version: 1.0.0
+  description: >
+    Proactive TN-NTN broadband handover prediction using Temporal Fusion
+    Transformer (TFT). 12-step lookahead with 7 uncertainty quantiles.
+    Predicts RSRP and elevation degradation before it happens, enabling
+    preemptive handover to maintain broadband connectivity.
+
+  vendor: TN-NTN-Research
+  type: xApp
+
+  deployment:
+    containers:
+      - name: tn-ntn-tft-xapp
+        image:
+          registry: nexus3.o-ran-sc.org:10002
+          name: tn-ntn-tft-xapp
+          tag: 1.0.0
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+        ports:
+          - name: http
+            containerPort: 8447
+            protocol: TCP
+          - name: rmr-data
+            containerPort: 4560
+            protocol: TCP
+          - name: rmr-route
+            containerPort: 4561
+            protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /xapp/v1/status
+            port: 8447
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8447
+          initialDelaySeconds: 60
+          periodSeconds: 15
+        env:
+          - name: DBAAS_SERVICE_HOST
+            value: "dbaas"
+          - name: RMR_SRC_ID
+            value: "tn-ntn-tft-xapp"
+          - name: TFT_CHECKPOINT_PATH
+            value: "/app/models/tft_best.ckpt"
+
+  messaging:
+    rmr:
+      protPort: tcp:4560
+      maxSize: 4096
+      numWorkers: 1
+      rxMessages:
+        - name: RIC_INDICATION
+          id: 12050
+        - name: A1_POLICY_REQ
+          id: 20010
+        - name: RIC_SUB_RESP
+          id: 12011
+        - name: RIC_SUB_FAILURE
+          id: 12012
+        - name: RIC_SUB_DEL_RESP
+          id: 12021
+        - name: RIC_HEALTH_CHECK_REQ
+          id: 100
+      txMessages:
+        - name: RIC_CONTROL_REQ
+          id: 12040
+        - name: A1_POLICY_RESP
+          id: 20011
+        - name: A1_POLICY_QUERY
+          id: 20012
+        - name: RIC_SUB_REQ
+          id: 12010
+        - name: RIC_SUB_DEL_REQ
+          id: 12020
+        - name: RIC_HEALTH_CHECK_RESP
+          id: 101
+
+  serviceModels:
+    - name: E2SM-KPM
+      version: "3.0"
+      ranFunctionId: 2
+    - name: E2SM-RC
+      version: "1.0"
+      ranFunctionId: 3
+
+  controls:
+    forecast_window_steps:
+      type: integer
+      default: 12
+    rsrp_alert_threshold_dbm:
+      type: number
+      default: -110.0
+    elevation_alert_threshold:
+      type: number
+      default: 0.15
+    tft_every_n:
+      type: integer
+      default: 5
+    min_window_depth:
+      type: integer
+      default: 30

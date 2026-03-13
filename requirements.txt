@@ -1,0 +1,25 @@
+# TN-NTN TFT xApp dependencies
+# PyTorch CPU (no CUDA -- xApp runs on RIC platform)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.1.0
+pytorch-lightning>=2.1.0
+pytorch-forecasting>=1.0.0
+
+# FastAPI + ASGI server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# O-RAN RIC framework
+ricxappframe>=3.2.0
+ricsdl>=3.1.0
+mdclogpy>=1.1.4
+
+# Serialization
+msgpack>=1.0.5
+
+# ASN.1 codec (E2AP/E2SM APER encoding)
+asn1tools>=0.164.0
+
+# Data processing
+numpy>=1.24.0
+pandas>=2.0.0

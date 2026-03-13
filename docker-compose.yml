@@ -1,0 +1,76 @@
+services:
+  # -----------------------------------------------------------
+  # Redis (DBAAS -- SDL backend for O-RAN xApp)
+  # -----------------------------------------------------------
+  dbaas:
+    image: redis:7-alpine
+    container_name: tft-xapp-dbaas
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - tft-xapp
+
+  # -----------------------------------------------------------
+  # TN-NTN TFT xApp (FastAPI + RMR + TFT inference)
+  # -----------------------------------------------------------
+  xapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tn-ntn-tft-xapp:latest
+    container_name: tn-ntn-tft-xapp
+    restart: unless-stopped
+    ports:
+      - "8447:8447"        # FastAPI xApp endpoints
+      - "4560:4560"        # RMR data port
+      - "4561:4561"        # RMR route port
+    volumes:
+      - ./models:/app/models:ro
+    environment:
+      - TFT_XAPP_HOST=0.0.0.0
+      - TFT_XAPP_PORT=8447
+      - TFT_CHECKPOINT_PATH=/app/models/tft_best.ckpt
+      - TFT_DEVICE=cpu
+      # SDL / Redis
+      - DBAAS_SERVICE_HOST=dbaas
+      - DBAAS_SERVICE_PORT=6379
+      # O-RAN RMR
+      - RMR_SRC_ID=tn-ntn-tft-xapp
+      - RMR_SEED_RT=${RMR_SEED_RT:-}
+      # O-RAN RIC
+      - RIC_URL=${RIC_URL:-}
+      - XAPP_ID=${XAPP_ID:-tn-ntn-tft-xapp}
+      # TFT tuning
+      - TFT_EVERY_N=${TFT_EVERY_N:-5}
+      - MIN_WINDOW_DEPTH=${MIN_WINDOW_DEPTH:-30}
+      - RSRP_ALERT_THRESHOLD=${RSRP_ALERT_THRESHOLD:--110.0}
+      - ELEVATION_ALERT_THRESHOLD=${ELEVATION_ALERT_THRESHOLD:-0.15}
+    depends_on:
+      dbaas:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8447/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - tft-xapp
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  tft-xapp:
+    driver: bridge
