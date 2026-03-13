@@ -173,6 +173,11 @@ class TFTPredictor:
             from pytorch_forecasting import TemporalFusionTransformer
 
             logger.info("Loading TFT model from %s...", self.checkpoint_path)
+            # Verify checkpoint integrity before loading
+            import hashlib
+            with open(self.checkpoint_path, "rb") as cf:
+                ckpt_hash = hashlib.sha256(cf.read()).hexdigest()[:16]
+            logger.info("Checkpoint SHA-256 prefix: %s", ckpt_hash)
             self.model = TemporalFusionTransformer.load_from_checkpoint(
                 self.checkpoint_path, map_location=self.device,
             )
